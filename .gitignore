@@ -1,0 +1,7 @@
+build/
+.vscode/
+*.bin
+*_!h*
+*compile_commands*
+*jruntime
+.cache/
