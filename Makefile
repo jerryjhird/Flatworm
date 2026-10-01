@@ -24,6 +24,9 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 -include $(DEPS)
 
+git:
+	./format
+
 clean:
 	rm -rf build $(TARGET) compile_commands.json
 

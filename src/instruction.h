@@ -15,29 +15,29 @@ typedef void (*instruction3_handler)(vm_cpu *cpu, uint64_t arg1, uint64_t arg2, 
 typedef void (*instruction4_handler)(vm_cpu *cpu, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4);
 
 typedef struct {
-    uint32_t id;
-    uint64_t arg1;
+	uint32_t id;
+	uint64_t arg1;
 } __attribute__((packed)) instruction1;
 
 typedef struct {
-    uint32_t id;
-    uint64_t arg1;
-    uint64_t arg2;
+	uint32_t id;
+	uint64_t arg1;
+	uint64_t arg2;
 } __attribute__((packed)) instruction2;
 
 typedef struct {
-    uint32_t id;
-    uint64_t arg1;
-    uint64_t arg2;
-    uint64_t arg3;
+	uint32_t id;
+	uint64_t arg1;
+	uint64_t arg2;
+	uint64_t arg3;
 } __attribute__((packed)) instruction3;
 
 typedef struct {
-    uint32_t id;
-    uint64_t arg1;
-    uint64_t arg2;
-    uint64_t arg3;
-    uint64_t arg4;
+	uint32_t id;
+	uint64_t arg1;
+	uint64_t arg2;
+	uint64_t arg3;
+	uint64_t arg4;
 } __attribute__((packed)) instruction4;
 
 void vm_execute_instruction(vm_cpu *cpu);
