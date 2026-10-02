@@ -1,18 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cpu.h"
 #include "instruction.h"
 #include "phys_addr.h"
+#include "util.h"
 
 #define MEM_SIZE VM_PAGE_SIZE * 4
 
-int main(int argc, char **argv) {
-	if (argc < 2) {
-		printf("usage: vm <program.bin>\n");
-		return 1;
-	}
-
-	FILE *f = fopen(argv[1], "rb");
+void main_run(const char *filename) {
+	FILE *f = fopen(filename, "rb");
 	if (!f) {
 		superv_panic(1, "failed to open input file\n");
 	}
@@ -59,6 +56,4 @@ int main(int argc, char **argv) {
 
 	vm_cpu_free(cpu);
 	vm_phys_address_space_free(phys_mem);
-
-	return 0;
 }

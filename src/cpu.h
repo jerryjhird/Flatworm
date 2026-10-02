@@ -2,7 +2,6 @@
 
 #include "phys_addr.h"
 #include "registers.h"
-#include "util.h"
 #include <stdbool.h>
 
 typedef struct {

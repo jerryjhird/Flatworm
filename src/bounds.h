@@ -2,41 +2,57 @@
 
 #include "cpu.h"
 #include "interrupts.h"
+#include "mathop.h"
 
-static inline void check_ga_reg_read(vm_cpu *cpu, uint64_t reg) {
-	if (reg >= GENERAL_ACCESS_REGISTER_COUNT) {
-		vm_fire_interrupt(cpu, 1);
-		return;
+static inline bool read_reg(vm_cpu *cpu, uint64_t reg, uint64_t *out) {
+	if (reg >= GENERAL_ACCESS_REGISTER_COUNT) { // check if reg is out of bounds
+		vm_fire_interrupt(cpu, 13);
+		return false;
 	}
-	if (cpu->registers.general_access_registers[reg].permission == ENV_FAULT_ON_ACTION || cpu->registers.general_access_registers[reg].permission == SUPERV_FAULT_ON_ACTION) {
-		vm_fire_interrupt(cpu, 1);
-		return;
-	}
+	*out = cpu->registers.general_access_registers[reg].value;
+	return true;
 }
 
-static inline void check_ga_reg_write(vm_cpu *cpu, uint64_t reg) {
-	if (reg >= GENERAL_ACCESS_REGISTER_COUNT) {
-		vm_fire_interrupt(cpu, 1);
-		return;
+static inline bool write_reg(vm_cpu *cpu, uint64_t reg, uint64_t val) {
+	if (reg >= GENERAL_ACCESS_REGISTER_COUNT) { // check if reg is out of bounds
+		vm_fire_interrupt(cpu, 13);
+		return false;
 	}
 
-	vm_register_permission perm = cpu->registers.general_access_registers[reg].permission;
-	if (perm == SUPERV_RO || perm == ENV_RO || perm == SUPERV_FAULT_ON_ACTION || perm == ENV_FAULT_ON_ACTION) {
-		vm_fire_interrupt(cpu, 1);
-		return;
+	if (cpu->registers.general_access_registers[reg].permission == RO) { // check if reg is read only
+		vm_fire_interrupt(cpu, 13);
+		return false;
 	}
+
+	cpu->registers.general_access_registers[reg].value = val;
+	return true;
 }
 
-static inline void check_mem_read(vm_cpu *cpu, uint64_t addr, uint64_t size) {
-	if (addr + size > cpu->phys_memory->length) {
-		vm_fire_interrupt(cpu, 0);
-		return;
+static inline bool read_le(vm_cpu *cpu, uint64_t addr, size_t n, uint64_t *out) {
+	if (addr >= cpu->phys_memory->length || n > cpu->phys_memory->length - addr) {
+		return false;
 	}
+
+	uint8_t *p = (uint8_t *)vm_get_host_addr(cpu, addr);
+	uint64_t v = 0;
+
+	for (size_t i = 0; i < n; i++) { v |= (uint64_t)p[i] << (i * 8); }
+
+	*out = v;
+	return true;
 }
 
-static inline void check_mem_write(vm_cpu *cpu, uint64_t addr, uint64_t size) {
-	if (addr + size > cpu->phys_memory->length) {
-		vm_fire_interrupt(cpu, 0);
-		return;
+static inline bool write_le(vm_cpu *cpu, uint64_t addr, size_t n, uint64_t val) {
+	// check if write exceeds physical memory bounds
+	if (addr >= cpu->phys_memory->length || n > cpu->phys_memory->length - addr) {
+		vm_fire_interrupt(cpu, 14);
+		return false;
 	}
+
+	uint8_t *p = (uint8_t *)vm_get_host_addr(cpu, addr);
+
+	for (size_t i = 0; i < n; i++) {
+		p[i] = (uint8_t)(val >> (i * 8));
+	}
+	return true;
 }

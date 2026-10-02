@@ -4,7 +4,7 @@
 vm_phys_address_space* vm_phys_address_space_alloc(uint64_t length) {
 	vm_phys_address_space *memspace = superv_malloc(sizeof(vm_phys_address_space));
 	void *mem = superv_calloc(1, length);
-	memspace->start = (superv_ptr_t)mem;
+	memspace->start = (uintptr_t)mem;
 	memspace->length = length;
 	return memspace;
 }

@@ -12,7 +12,7 @@ typedef struct __attribute__((packed)) {
 } vm_interrupt_routing_table;
 
 static inline void vm_check_interrupt_routing_table(vm_cpu *cpu, virtenv_ptr_t ptr) {
-	if (ptr + sizeof(vm_interrupt_routing_table) > cpu->phys_memory->length) {
+	if (ptr >= cpu->phys_memory->length || sizeof(vm_interrupt_routing_table) > cpu->phys_memory->length - ptr) {
 		superv_panic(1, "GAR_INTERRUPT_ROUTING_TABLE (ERR 0) (reg 33) was corrupted while needing interrupt functionality\n");
 		return;
 	}

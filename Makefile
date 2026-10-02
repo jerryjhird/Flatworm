@@ -15,12 +15,19 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 	@echo "[" > compile_commands.json
-	@cat $(shell find $(BUILD_DIR) -name '*.o.json') | sed '$$!s/$$/,/' >> compile_commands.json
-	@echo "]" >> compile_commands.json
+	@comma=""; \
+	for src in $(SRCS); do \
+		rel_path="$${src#$(SRC_DIR)/}"; \
+		obj="$(BUILD_DIR)/$${rel_path%.*}.o"; \
+		printf "%s\n  {\n    \"directory\": \"%s\",\n    \"command\": \"%s %s -c %s -o %s\",\n    \"file\": \"%s\",\n    \"output\": \"%s\"\n  }" \
+			"$$comma" "$(CURDIR)" "$(CC)" "$(subst ",\",$(CFLAGS))" "$$src" "$$obj" "$$src" "$$obj" >> compile_commands.json; \
+		comma=","; \
+	done
+	@printf "\n]\n" >> compile_commands.json
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -MJ $@.json -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 -include $(DEPS)
 

@@ -4,38 +4,40 @@
 #include <stdbool.h>
 
 // Interrupt Routing Table (0 - 31)
-// 0  :  Illegal Memory Access
-// 1  :  Illegal Register Access
-// 2  :  Illegal Instruction
-// 3  :  Reserved
-// 4  :  Reserved
-// 5  :  Reserved
-// 6  :  Reserved
-// 7  :  Reserved
-// 8  :  Reserved
-// 9  :  Reserved
-// 10  : Reserved
-// 11  : Reserved
-// 12  : Reserved
-// 13  : Reserved
-// 14  : Reserved
-// 15  : Reserved
-// 16  : Reserved
-// 17  : Reserved
-// 18  : Reserved
-// 19  : Reserved
-// 20 :  Reserved
-// 21  : Reserved
-// 22  : Reserved
-// 23  : Reserved
-// 24  : Reserved
-// 25  : Reserved
-// 26  : Reserved
-// 27  : Reserved
-// 28  : Reserved
-// 29  : Reserved
-// 30  : Reserved
-// 31  : Reserved
+const char *exception_reason_strings[32] = {
+	"Divide Error",
+	"Debug",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Invalid Instruction",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"General Protection Fault", // invalid register / etc...
+	"Page Fault",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Floating Point Exception",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved"
+};
 
 void vm_fire_interrupt(vm_cpu *cpu, uint8_t vector) {
 	cpu->is_halted = false;
@@ -46,6 +48,13 @@ void vm_fire_interrupt(vm_cpu *cpu, uint8_t vector) {
 	}
 
 	virtenv_ptr_t table_ptr = cpu->registers.general_access_registers[GAR_INTERRUPT_ROUTING_TABLE].value;
+
+	if (table_ptr == 0) {
+		if (vector < 32) {
+			superv_panic(1, "%s (vector %u)", exception_reason_strings[vector], vector);
+		}
+		return;
+	}
 
 	vm_check_interrupt_routing_table(cpu, table_ptr);
 
