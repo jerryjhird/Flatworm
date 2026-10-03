@@ -7,6 +7,8 @@
 #include "instructions.h"
 #include "mathop.h"
 
+#define REG_PREFIX 'r'
+
 typedef struct {
 	char *name;
 	uint64_t offset;
@@ -52,11 +54,13 @@ static void add_label(const char *name, uint64_t offset) {
 	if (label_count >= label_capacity) {
 		label_capacity = label_capacity == 0 ? 16 : label_capacity * 2;
 		label_t *new_labels = realloc(labels, label_capacity * sizeof(label_t));
+
 		if (!new_labels) {
 			fprintf(stderr, "error: memory allocation failed\n");
 			superv_free(clean_name);
 			exit(1);
 		}
+
 		labels = new_labels;
 	}
 
@@ -89,17 +93,73 @@ static bool find_label(const char *name, uint64_t *out_offset) {
 	return false;
 }
 
-static uint64_t parse_operand(const char *op) {
-	if (!op) return 0;
-	if (op[0] == 'x') { return strtoull(op + 1, NULL, 0); }
-	if (strcmp(op, "pc") == 0) { return GAR_PROGRAM_COUNTER; }
-	if (strcmp(op, "irt") == 0) { return GAR_INTERRUPT_ROUTING_TABLE; }
+static vm_operand parse_operand(const char *op) {
+	vm_operand operand = {0, 0};
+	if (!op) return operand;
 
+	// check if its a gpr (by checking if it starts with REG_PREFIX)
+	if (op[0] == REG_PREFIX && op[1] >= '0' && op[1] <= '9') {
+		operand.type = OP_TYPE_REG;
+		operand.val = strtoull(op + 1, NULL, 0);
+		return operand;
+	}
+
+	// check special register table
+	for (size_t i = 0; i < sizeof(SPECIAL_REGISTERS) / sizeof(SPECIAL_REGISTERS[0]); i++) {
+		if (strcmp(op, SPECIAL_REGISTERS[i].name) == 0) {
+			operand.type = OP_TYPE_REG;
+			operand.val = SPECIAL_REGISTERS[i].id;
+			return operand;
+		}
+	}
+
+	// check for a register indirect memory addr like [r1]
+	size_t len = strlen(op);
+	if (len >= 3 && op[0] == '[' && op[1] == REG_PREFIX && op[len - 1] == ']') {
+		char reg_buf[32];
+		size_t reg_len = len - 3; // subtract [ and ]
+		if (reg_len < sizeof(reg_buf)) {
+			memcpy(reg_buf, op + 2, reg_len);
+			reg_buf[reg_len] = '\0';
+			operand.type = OP_TYPE_MEM;
+			operand.val = strtoull(reg_buf, NULL, 0);
+			return operand;
+		}
+	}
+
+	// check memory addr enclosed in brackets like [0x1000] or [label]
+	if (len >= 2 && op[0] == '[' && op[len - 1] == ']') {
+		char inner[256];
+		size_t inner_len = len - 2;
+		if (inner_len < sizeof(inner)) {
+			memcpy(inner, op + 1, inner_len);
+			inner[inner_len] = '\0';
+
+			uint64_t label_offset = 0;
+			if (find_label(inner, &label_offset)) {
+				operand.type = OP_TYPE_MEM;
+				operand.val = label_offset;
+				return operand;
+			}
+
+			operand.type = OP_TYPE_MEM;
+			operand.val = strtoull(inner, NULL, 0);
+			return operand;
+		}
+	}
+
+	// check for immediate label
 	uint64_t label_offset = 0;
+	if (find_label(op, &label_offset)) {
+		operand.type = OP_TYPE_IMM;
+		operand.val = label_offset;
+		return operand;
+	}
 
-	if (find_label(op, &label_offset)) { return label_offset; }
-
-	return strtoull(op, NULL, 0);
+	// default to immediate value
+	operand.type = OP_TYPE_IMM;
+	operand.val = strtoull(op, NULL, 0);
+	return operand;
 }
 
 #define CHECK_TABLE(table, type_val, args_val) \
@@ -120,34 +180,50 @@ static bool lookup_mnemonic(const char *mnemonic, uint8_t *out_type, uint64_t *o
 	return false;
 }
 
-size_t encode_instruction(uint8_t *out, uint8_t type, uint64_t id, const uint64_t *args) {
+size_t encode_instruction(uint8_t *out, uint8_t type, uint64_t id, const vm_operand *args) {
 	type &= INSTRUCTION_TYPE_MASK;
 	size_t argc = arg_counts[type];
-	size_t meta_bits = INSTRUCTION_HEADER_BITS + INSTRUCTION_ARGLEN_BITS * argc;
+
+	// total bits for header + descriptors
+	size_t meta_bits = INSTRUCTION_HEADER_BITS + (ARG_TYPE_BITS + ARG_LEN_BITS) * argc;
 
 	if (id >> (64 - meta_bits)) {
 		return 0;
 	}
 
-	uint64_t raw = type | (id << meta_bits);
+	// initialize raw header with instruction type
+	uint64_t raw = type;
 	size_t arg_lens[INSTRUCTION_MAX_ARGS];
 
 	for (size_t i = 0; i < argc; i++) {
-		arg_lens[i] = bytes_needed(args[i]);
-		raw |= (uint64_t)(arg_lens[i] - 1) << (INSTRUCTION_HEADER_BITS + INSTRUCTION_ARGLEN_BITS * i);
+		arg_lens[i] = bytes_needed(args[i].val);
+		// ensure length fits within ARG_LEN_BITS
+		uint64_t encoded_len = (arg_lens[i] > 0 ? arg_lens[i] - 1 : 0);
+		uint64_t arg_desc = ((uint64_t)args[i].type << ARG_LEN_BITS) | (encoded_len & ARG_LEN_MASK);
+
+		raw |= (arg_desc << (INSTRUCTION_HEADER_BITS + ((ARG_TYPE_BITS + ARG_LEN_BITS) * i)));
 	}
 
+	// pack instruction ID above argument descriptors
+	raw |= (id << meta_bits);
+
+	// total header size in bytes
 	size_t id_len = bytes_needed(raw);
-	raw |= (uint64_t)(id_len - 1) << INSTRUCTION_LEN_SHIFT;
+	if (id_len > 8) id_len = 8; // cap header size to 64 bit word max
+
+	// insert header length (minus 1) into header bits shift position
+	raw &= ~(INSTRUCTION_LEN_MASK << INSTRUCTION_LEN_SHIFT);
+	raw |= ((uint64_t)(id_len - 1) & INSTRUCTION_LEN_MASK) << INSTRUCTION_LEN_SHIFT;
 
 	size_t n = 0;
 	for (size_t i = 0; i < id_len; i++) {
 		out[n++] = (uint8_t)(raw >> (i * 8));
 	}
 
+	// append actual operand payload bytes
 	for (size_t i = 0; i < argc; i++) {
 		for (size_t j = 0; j < arg_lens[i]; j++) {
-			out[n++] = (uint8_t)(args[i] >> (j * 8));
+			out[n++] = (uint8_t)(args[i].val >> (j * 8));
 		}
 	}
 	return n;
@@ -286,7 +362,7 @@ void main_compile(const char *input_filename, const char *output_filename) {
 
 		// measure size in pass one
 		int arg_count = (int)tokens.count - 1;
-		uint64_t dummy_args[4] = {0};
+		vm_operand dummy_args[4] = {{0, 0}};
 
 		for (int i = 0; i < arg_count && i < 4; i++) {
 			dummy_args[i] = parse_operand(tokens.tokens[i + 1]);
@@ -361,7 +437,7 @@ void main_compile(const char *input_filename, const char *output_filename) {
 		}
 
 		int arg_count = (int)tokens.count - 1;
-		uint64_t args[4] = {0};
+		vm_operand args[4] = {{0, 0}};
 		for (int i = 0; i < arg_count && i < 4; i++) {
 			args[i] = parse_operand(tokens.tokens[i + 1]);
 		}

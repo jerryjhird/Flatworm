@@ -1,6 +1,8 @@
 #include "cpu.h"
+#include "operand.h"
 
-void ins_halt(vm_cpu *cpu, uint64_t arg1) {
-	(void)arg1;
+void ins_halt(vm_cpu *cpu, vm_operand arg1) {
+	UNUSED(arg1);
+
 	cpu->is_halted = true;
 }

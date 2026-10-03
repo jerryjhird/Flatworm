@@ -1,4 +1,3 @@
-
 64 bit integer limit = 18446744073709551615
 ??? meaning i am yet to decide size constraints
 
@@ -8,27 +7,25 @@ interrupt_vector (0 to 256) (vector 256 is reserved)
 portio_port (0 to ???)
 immediate_value (0 to 64 bit integer limit)
 
+// operand classes:
+// operand      = general_access_register || memory_address || immediate_value
+// destination  = general_access_register || memory_address
+
 // control
-halt(argument)                         (argument doesn't do anything)
-int(vector)                            (interrupt_vector)
-jmp(target)                            (memory_address)
-jz(reg, target)                        (general_access_register, memory_address)
+halt(argument)                          (argument doesn't do anything)
+int(vector)                             (interrupt_vector)
+jmp(target)                             (memory_address)
+jz(src, target)                         (operand, memory_address)
 
 // portio
-bufout(port, addr, length)             (portio_port, memory_address, length)
-bufin(port, addr, length)              (portio_port, memory_address, length)
+bufout(port, addr, length)              (portio_port, memory_address, length)
+bufin(port, addr, length)               (portio_port, memory_address, length)
 
 // arithmetic
-add_rr(src1, src2, dst)                (general_access_register, general_access_register, general_access_register)
-add_imm(src1, imm, dst)                (general_access_register, immediate_value, general_access_register)
-sub_rr(src1, src2, dst)                (general_access_register, general_access_register, general_access_register)
-sub_imm(src1, imm, dst)                (general_access_register, immediate_value, general_access_register)
-mul_rr(src1, src2, dst)                (general_access_register, general_access_register, general_access_register)
-div_rr(src1, src2, dst)                (general_access_register, general_access_register, general_access_register)
+add(src1, src2, dst)                    (operand, operand, destination)
+sub(src1, src2, dst)                    (operand, operand, destination)
+mul(src1, src2, dst)                    (operand, operand, destination)
+div(src1, src2, dst)                    (operand, operand, destination)
 
-// memory
-mov_rr(dst, src)                       (general_access_register, general_access_register)
-mov_rm(dst, addr)                      (general_access_register, memory_address)
-mov_mr(addr, src)                      (memory_address, general_access_register)
-mov_imm(dst, imm)                      (general_access_register, immediate_value)
-mov_im(addr, imm)                      (memory_address, immediate_value)
+// memory management
+mov(dst, src)                           (destination, operand)

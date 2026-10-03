@@ -43,11 +43,7 @@ static const handler_entry1 handlers1[] = {
 };
 
 static const handler_entry2 handlers2[] = {
-	{"mov_rr", mov_rr_insid, ins_mov_rr},
-	{"mov_rm", mov_rm_insid, ins_mov_rm},
-	{"mov_mr", mov_mr_insid, ins_mov_mr},
-	{"mov_imm", mov_imm_insid, ins_mov_imm},
-	{"mov_im", mov_im_insid, ins_mov_im},
+	{"mov", mov_insid, ins_mov},
 	{"jz", jz_insid, ins_jz},
 	{NULL, 0, NULL}
 };
@@ -56,12 +52,10 @@ static const handler_entry3 handlers3[] = {
 	{"bufout", bufout_insid, ins_bufout},
 	{"bufin", bufin_insid, ins_bufin},
 
-	{"add_rr", add_rr_insid, ins_add_rr},
-	{"sub_rr", sub_rr_insid, ins_sub_rr},
-	{"mul_rr", mul_rr_insid, ins_mul_rr},
-	{"div_rr", div_rr_insid, ins_div_rr},
-	{"add_imm", add_imm_insid, ins_add_imm},
-	{"sub_imm", sub_imm_insid, ins_sub_imm},
+	{"add", add_insid, ins_add},
+	{"sub", sub_insid, ins_sub},
+	{"mul", mul_insid, ins_mul},
+	{"div", div_insid, ins_div},
 	{NULL, 0, NULL}
 };
 

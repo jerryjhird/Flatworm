@@ -4,13 +4,12 @@
 #include "interrupts.h"
 #include "mathop.h"
 
-static inline bool read_reg(vm_cpu *cpu, uint64_t reg, uint64_t *out) {
-	if (reg >= GENERAL_ACCESS_REGISTER_COUNT) { // check if reg is out of bounds
+static inline uint64_t read_reg(vm_cpu *cpu, uint64_t reg) {
+	if (reg >= GENERAL_ACCESS_REGISTER_COUNT) {
 		vm_fire_interrupt(cpu, 13);
-		return false;
+		return 0;
 	}
-	*out = cpu->registers.general_access_registers[reg].value;
-	return true;
+	return cpu->registers.general_access_registers[reg].value;
 }
 
 static inline bool write_reg(vm_cpu *cpu, uint64_t reg, uint64_t val) {

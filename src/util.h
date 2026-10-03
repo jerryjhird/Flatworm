@@ -8,6 +8,7 @@
 #define VM_PAGE_SIZE 4096
 
 #define virtenv_ptr_t uint64_t
+#define UNUSED(x) (void)(x)
 
 typedef enum {
 	LOG_INFO = 0,
