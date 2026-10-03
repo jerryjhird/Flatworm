@@ -4,7 +4,7 @@ LDFLAGS =
 
 SRC_DIR = src
 BUILD_DIR = build/srctree
-TARGET = jruntime
+TARGET = flatworm
 
 SRCS := $(shell find $(SRC_DIR) -name '*.c')
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -30,9 +30,6 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 -include $(DEPS)
-
-git:
-	./format
 
 clean:
 	rm -rf build $(TARGET) compile_commands.json

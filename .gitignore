@@ -3,5 +3,5 @@ build/
 *.bin
 *_h*
 *compile_commands*
-*jruntime
+flatworm
 .cache/

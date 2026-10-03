@@ -2,23 +2,32 @@
 #include <string.h>
 #include "all.h"
 
+static inline void print_help(const char *prog_name) {
+	printf("usage:\n");
+	printf("  %s run <program.bin>\n", prog_name);
+	printf("  %s compile [input.asm] [-o <output.bin>]\n", prog_name);
+}
+
 int main(int argc, char **argv) {
 	if (argc < 2) {
-		printf("usage: vm <command> [<args>]\n");
+		print_help(argv[0]);
 		return 1;
 	}
 
 	if (strcmp(argv[1], "run") == 0) {
 		if (argc < 3) {
-			printf("usage: vm run <program.bin>\n");
+			printf("usage: %s run <program.bin>\n", argv[0]);
 			return 1;
 		}
+
 		main_run(argv[2]);
+
 	} else if (strcmp(argv[1], "compile") == 0) {
 		if (argc < 3) {
-			printf("usage: vm compile <input.bin> [-o <output.bin>]\n");
+			printf("usage: %s compile <input> [-o <output.bin>]\n", argv[0]);
 			return 1;
 		}
+
 		const char *input_file = argv[2];
 		const char *output_file = NULL;
 
@@ -32,7 +41,7 @@ int main(int argc, char **argv) {
 
 		main_compile(input_file, output_file);
 	} else {
-		printf("unknown command: %s\n", argv[1]);
+		print_help(argv[0]);
 		return 1;
 	}
 
