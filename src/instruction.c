@@ -90,4 +90,18 @@ void vm_execute_instruction(vm_cpu *cpu) {
 			break;
 		}
 	}
+
+	char *debug_env = getenv("DEBUG");
+	if (debug_env && (strcmp(debug_env, "true") == 0 || strcmp(debug_env, "1") == 0)) {
+		fprintf(stderr, "[DEBUG] PC: 0x%016lx | Type: ARG_%u | ID: %lu | Args: ", pc, type + 1, id);
+		for (size_t i = 0; i < argc; i++) {
+			const char *type_str = "UNKNOWN";
+			if (args[i].type == OP_TYPE_REG) type_str = "REG";
+			else if (args[i].type == OP_TYPE_IMM) type_str = "IMM";
+			else if (args[i].type == OP_TYPE_MEM) type_str = "MEM";
+
+			fprintf(stderr, "[%s: 0x%lx] ", type_str, args[i].val);
+		}
+		fprintf(stderr, "\n");
+	}
 }

@@ -2,4 +2,3 @@
 0      = zero register                          (supervisor enforced ro)
 1 - 31 = general purpose registers (GPR)        (rw)
 32     = program counter / instruction pointer  (rw)
-33     = interrupt routing table                (rw)

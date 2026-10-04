@@ -70,12 +70,12 @@ static void add_label(const char *name, uint64_t offset) {
 }
 
 static bool find_label(const char *name, uint64_t *out_offset) {
-	if (!name) return false;
+	if (!name) { return false; }
 
 	size_t len = strlen(name);
 	char *clean_name = superv_malloc(len + 1);
 
-	if (!clean_name) return false;
+	if (!clean_name) { return false; }
 
 	strcpy(clean_name, name);
 
@@ -95,7 +95,7 @@ static bool find_label(const char *name, uint64_t *out_offset) {
 
 static vm_operand parse_operand(const char *op) {
 	vm_operand operand = {0, 0};
-	if (!op) return operand;
+	if (!op) { return operand; }
 
 	// check if its a gpr (by checking if it starts with REG_PREFIX)
 	if (op[0] == REG_PREFIX && op[1] >= '0' && op[1] <= '9') {
@@ -175,8 +175,8 @@ static vm_operand parse_operand(const char *op) {
 static bool lookup_mnemonic(const char *mnemonic, uint8_t *out_type, uint64_t *out_id, int *out_args) {
 	CHECK_TABLE(handlers1, 0, arg_counts[0])
 	CHECK_TABLE(handlers2, 1, arg_counts[1])
-	CHECK_TABLE(handlers3, 3, arg_counts[3])
-	CHECK_TABLE(handlers4, 2, arg_counts[2])
+	CHECK_TABLE(handlers3, 2, arg_counts[2])
+	CHECK_TABLE(handlers4, 3, arg_counts[3])
 	return false;
 }
 
@@ -209,7 +209,9 @@ size_t encode_instruction(uint8_t *out, uint8_t type, uint64_t id, const vm_oper
 
 	// total header size in bytes
 	size_t id_len = bytes_needed(raw);
-	if (id_len > 8) id_len = 8; // cap header size to 64 bit word max
+	if (id_len > 8) {
+		id_len = 8; // cap header size to 64 bit word max
+	}
 
 	// insert header length (minus 1) into header bits shift position
 	raw &= ~(INSTRUCTION_LEN_MASK << INSTRUCTION_LEN_SHIFT);
@@ -233,7 +235,9 @@ static char *read_line(FILE *fin) {
 	size_t cap = 128;
 	size_t len = 0;
 	char *buf = superv_malloc(cap);
-	if (!buf) return NULL;
+	if (!buf) {
+		return NULL;
+	}
 
 	int c;
 	while ((c = fgetc(fin)) != EOF && c != '\n') {
@@ -267,21 +271,33 @@ typedef struct {
 
 static token_list_t tokenize_line(const char *line) {
 	token_list_t tlist = {NULL, 0};
-	if (!line) return tlist;
+	if (!line) {
+		return tlist;
+	}
 	size_t cap = 0;
 	const char *p = line;
 	while (*p) {
-		while (*p == ' ' || *p == '\t' || *p == '\r') p++;
-		if (*p == '\0' || *p == '#' || *p == ';') break; // stop at comments
+		while (*p == ' ' || *p == '\t' || *p == '\r' || *p == ',') {
+			p++;
+		}
+		if (*p == '\0' || *p == '#' || *p == ';') {
+			break; // stop at comments
+		}
 
 		const char *start = p;
-		while (*p && *p != ' ' && *p != '\t' && *p != '\r' && *p != '\n' && *p != '#' && *p != ';') p++;
+		while (*p && *p != ' ' && *p != '\t' && *p != '\r' && *p != '\n' && *p != ',' && *p != '#' && *p != ';') {
+			p++;
+		}
 
 		size_t len = p - start;
-		if (len == 0) break;
+		if (len == 0) {
+			break;
+		}
 
 		char *token = superv_malloc(len + 1);
-		if (!token) break;
+		if (!token) {
+			break;
+		}
 		memcpy(token, start, len);
 		token[len] = '\0';
 
@@ -302,7 +318,9 @@ static token_list_t tokenize_line(const char *line) {
 }
 
 static void free_tokens(token_list_t *tlist) {
-	if (!tlist) return;
+	if (!tlist) {
+		return;
+	}
 
 	for (size_t i = 0; i < tlist->count; i++) {
 		superv_free(tlist->tokens[i]);
@@ -362,6 +380,16 @@ void main_compile(const char *input_filename, const char *output_filename) {
 
 		// measure size in pass one
 		int arg_count = (int)tokens.count - 1;
+
+		if (arg_count != expected_args) {
+			fprintf(stderr, "error: %s expects %d operands, got %d\n", mnemonic, expected_args, arg_count);
+			free_tokens(&tokens);
+			superv_free(line);
+			fclose(fin);
+			free_labels();
+			exit(1);
+		}
+
 		vm_operand dummy_args[4] = {{0, 0}};
 
 		for (int i = 0; i < arg_count && i < 4; i++) {

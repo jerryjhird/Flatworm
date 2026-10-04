@@ -3,7 +3,7 @@
 
   # Flatworm
 
-  [Documentation] | [Contributing]
+  [Documentation] | [Examples] | [Contributing]
 </div>
 
 ---
@@ -13,18 +13,24 @@
 This repository contains an assembler, runtime and documentation (documentation can be limited)
 
 [Documentation]: docs/table_of_contents.md
+[Examples]: examples/
 [Contributing]: CONTRIBUTING.md
 
 ## How to use
 
 run `make` to compile the project. and after you can use either of the below commands, provided you have the correct files
 
-### run a flatworm binary:
+### compiling the main example:
 ```bash
-./flatworm run [program.bin]
+./flatworm compile examples/1.asm -o program.bin
 ```
 
-### generate a flatworm binary:
+### running the main example:
 ```bash
-./flatworm compile [input.asm] -o [program.bin]
+./flatworm run program.bin
+```
+
+### running the main example in debug mode:
+```bash
+DEBUG=1 ./flatworm run program.bin
 ```
