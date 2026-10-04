@@ -50,7 +50,7 @@ void main_run(const char *filename) {
 	superv_free(buffer);
 
 	// run program
-	while (!cpu->is_halted) {
+	while (!cpu->stop) {
 		vm_execute_instruction(cpu);
 	}
 

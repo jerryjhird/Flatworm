@@ -18,7 +18,7 @@ const char *exception_reason_strings[32] = {
 	"Reserved",
 	"Reserved",
 	"Reserved",
-	"General Protection Fault", // invalid register / etc...
+	"Invalid Operand",
 	"Page Fault",
 	"Reserved",
 	"Reserved",
@@ -39,32 +39,27 @@ const char *exception_reason_strings[32] = {
 	"Reserved"
 };
 
-void vm_fire_interrupt(vm_cpu *cpu, uint8_t vector) {
-	cpu->is_halted = false;
-
+void vm_register_interrupt_handler(vm_cpu *cpu, uint8_t vector, virtenv_ptr_t virtenv_handler_ptr) {
 	if (vector >= MAX_INTERRUPTS) {
 		superv_panic(1, "interrupt vector %u exceeds maximum limit of %u", vector, MAX_INTERRUPTS);
 		return;
 	}
 
-	virtenv_ptr_t table_ptr = cpu->registers.general_access_registers[GAR_INTERRUPT_ROUTING_TABLE].value;
+	cpu->irq_table.entries[vector] = virtenv_handler_ptr;
+}
 
-	if (table_ptr == 0) {
-		if (vector < 32) {
-			superv_panic(1, "%s (vector %u)", exception_reason_strings[vector], vector);
-		}
+void vm_fire_interrupt(vm_cpu *cpu, uint8_t vector) {
+	if (vector >= MAX_INTERRUPTS) {
+		superv_panic(1, "interrupt vector %u exceeds maximum limit of %u", vector, MAX_INTERRUPTS);
 		return;
 	}
 
-	vm_check_interrupt_routing_table(cpu, table_ptr);
+	virtenv_ptr_t handler_ptr = cpu->irq_table.entries[vector];
 
-	vm_interrupt_routing_table *table = (vm_interrupt_routing_table *)((uint8_t *)cpu->phys_memory->start + table_ptr);
-
-	virtenv_ptr_t handler_ptr = table->entries[vector];
-
+	// if firing unhandled exception
 	if (handler_ptr == 0) {
 		if (vector < 32) {
-			superv_panic(1, "exception was thrown while missing exception handler for vector %u\n", vector);
+			superv_panic(1, "exception was thrown while missing exception handler for vector %u (%s)\n", vector, exception_reason_strings[vector]);
 		}
 		return;
 	}

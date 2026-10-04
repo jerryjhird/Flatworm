@@ -1,8 +1,7 @@
 #include <stdint.h>
-#include <stdio.h>
+#include <unistd.h> // for write
 #include "cpu.h"
 #include "bounds.h"
-#include "instruction.h"
 #include "operand.h"
 
 // write to port (outgoing)
@@ -14,10 +13,12 @@ void ins_bufout(vm_cpu *cpu, vm_operand port_op, vm_operand addr_op, vm_operand 
 	for (uint64_t i = 0; i < length; i++) {
 		uint64_t val = 0;
 		if (!read_le(cpu, base_addr + i, 1, &val)) {
+			fprintf(stderr, "[BUFOUT ERROR] read_le failed at address 0x%lx\n", base_addr + i);
 			return;
 		}
 		if (port == 1) {
-			putchar((uint8_t)val);
+			char ch = (char)val;
+			write(STDOUT_FILENO, &ch, 1);
 		}
 	}
 }

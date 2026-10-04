@@ -5,10 +5,10 @@
 #include "cpu.h"
 #include "operand.h"
 
-#define INSTRUCTION_ARG_1 0x0 // 00
-#define INSTRUCTION_ARG_2 0x1 // 01
-#define INSTRUCTION_ARG_3 0x3 // 11
-#define INSTRUCTION_ARG_4 0x2 // 10
+#define INSTRUCTION_ARG_1 0x0
+#define INSTRUCTION_ARG_2 0x1
+#define INSTRUCTION_ARG_3 0x2
+#define INSTRUCTION_ARG_4 0x3
 
 #define INSTRUCTION_TYPE_MASK 0x3
 #define INSTRUCTION_LEN_SHIFT 2

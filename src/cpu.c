@@ -13,7 +13,7 @@ vm_cpu* vm_cpu_alloc(vm_phys_address_space *phys_memory) {
 	}
 
 	cpu->registers.general_access_registers[0].permission = RO;
-	cpu->is_halted = false;
+	cpu->stop = false;
 
 	return cpu;
 }

@@ -14,11 +14,10 @@ typedef struct {
 	vm_register_permission permission;
 } vm_register;
 
-#define GENERAL_ACCESS_REGISTER_COUNT 34
+#define GENERAL_ACCESS_REGISTER_COUNT 33
 
 #define GAR_ZERO 0
 #define GAR_PROGRAM_COUNTER 32
-#define GAR_INTERRUPT_ROUTING_TABLE 33
 
 typedef struct {
 	const char *name;
@@ -26,14 +25,12 @@ typedef struct {
 } special_register;
 
 static const special_register SPECIAL_REGISTERS[] = {
-	{ "pc",  GAR_PROGRAM_COUNTER },
-	{ "irt", GAR_INTERRUPT_ROUTING_TABLE },
+	{ "pc",  GAR_PROGRAM_COUNTER }
 };
 
 typedef struct {
 	// 0	  = zero register						  (supervisor enforced ro)
 	// 1 - 31 = general purpose registers (GPR)		  (rw)
 	// 32	 = program counter / instruction pointer  (rw)
-	// 33	 = interrupt routing table				  (rw)
-	vm_register general_access_registers[GENERAL_ACCESS_REGISTER_COUNT]; // general access meaning standard instructions like mov_rr and etc work
+	vm_register general_access_registers[GENERAL_ACCESS_REGISTER_COUNT];
 } vm_register_file;
